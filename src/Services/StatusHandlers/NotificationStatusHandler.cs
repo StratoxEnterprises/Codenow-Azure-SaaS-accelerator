@@ -5,13 +5,14 @@ using Marketplace.SaaS.Accelerator.Services.Helpers;
 using Marketplace.SaaS.Accelerator.Services.Models;
 using Marketplace.SaaS.Accelerator.Services.Services;
 using Microsoft.Extensions.Logging;
+using Slack.Webhooks;
 
 namespace Marketplace.SaaS.Accelerator.Services.StatusHandlers;
 
 /// <summary>
 /// Status handler to send out notifications based on the last status of the subscription.
 /// </summary>
-/// <seealso cref="Microsoft.Marketplace.SaasKit.Provisioning.Webjob.StatusHandlers.AbstractSubscriptionStatusHandler" />
+/// <seealso cref="AbstractSubscriptionStatusHandler" />
 public class NotificationStatusHandler : AbstractSubscriptionStatusHandler
 {
     /// <summary>
@@ -199,6 +200,38 @@ public class NotificationStatusHandler : AbstractSubscriptionStatusHandler
                 {
                     this.emailService.SendEmail(emailContent);
                 }
+            }
+        }
+        
+        //Slack notification section
+        bool isSlackNotificationEnabled = Convert.ToBoolean(this.applicationConfigRepository.GetValueByName("EnableSlackNotification"));
+        string slackNotificationWebhook = this.applicationConfigRepository.GetValueByName("SlackNotificationWebhook");
+        string slackNotificationChannel = this.applicationConfigRepository.GetValueByName("SlackNotificationChannel");
+        if (isSlackNotificationEnabled)
+        {
+            var slackClient = new SlackClient(slackNotificationWebhook);
+            if (subscription.SubscriptionStatus == SubscriptionStatusEnumExtension.PendingActivation.ToString()
+                || subscription.SubscriptionStatus == SubscriptionStatusEnumExtension.Unsubscribed.ToString())
+            {
+                string message = "";
+                if (subscription.SubscriptionStatus == SubscriptionStatusEnumExtension.PendingActivation.ToString())
+                {
+                    message =
+                        "New Azure subscription was created, please check <https://subscription-manager.codenow.com|Azure Subscription Manager>";
+                }
+                else if (subscription.SubscriptionStatus == SubscriptionStatusEnumExtension.Unsubscribed.ToString())
+                {
+                    message = "Azure subscription '" + subscription.AmpsubscriptionId +
+                              "' was canceled, please check <https://subscription-manager.codenow.com|Azure Subscription Manager>";
+                }
+                var slackMessage = new SlackMessage
+                {
+                    Channel = slackNotificationChannel,
+                    Text = message,
+                    IconEmoji = Emoji.Star,
+                    Username = "AzureSubscriptionManager"
+                };
+                slackClient.Post(slackMessage);
             }
         }
     }
