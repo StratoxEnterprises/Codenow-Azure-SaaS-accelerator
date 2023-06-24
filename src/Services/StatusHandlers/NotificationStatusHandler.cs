@@ -217,12 +217,12 @@ public class NotificationStatusHandler : AbstractSubscriptionStatusHandler
                 if (subscription.SubscriptionStatus == SubscriptionStatusEnumExtension.PendingActivation.ToString())
                 {
                     message =
-                        "New Azure subscription was created, please check <https://subscription-manager.codenow.com|Azure Subscription Manager>";
+                        "New Azure subscription was created, please check <https://subscription-manager-admin.codenow.com|Azure Subscription Manager>";
                 }
                 else if (subscription.SubscriptionStatus == SubscriptionStatusEnumExtension.Unsubscribed.ToString())
                 {
                     message = "Azure subscription '" + subscription.AmpsubscriptionId +
-                              "' was canceled, please check <https://subscription-manager.codenow.com|Azure Subscription Manager>";
+                              "' was canceled, please check <https://subscription-manager-admin.codenow.com|Azure Subscription Manager>";
                 }
                 var slackMessage = new SlackMessage
                 {
